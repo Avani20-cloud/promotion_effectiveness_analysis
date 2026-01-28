@@ -2,43 +2,41 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load dataset
-df = pd.read_csv("data/sales.csv")
+df = pd.read_csv(r"C:\Users\HP\OneDrive\Documents\promotion_effectiveness_analysis\data\sales.csv")
 
-# Basic checks
-print(df.head())
-print(df.info())
+df.columns = df.columns.str.lower()
 
-# Data cleaning
-df['onpromotion'] = df['onpromotion'].fillna(False)
-df['sales'] = df['sales'].fillna(0)
-df['date'] = pd.to_datetime(df['date'])
+df['orderdate'] = pd.to_datetime(df['orderdate'], dayfirst=True, errors='coerce')
 
-# Create promotion flag
-df['promotion_flag'] = df['onpromotion'].map({
-    True: 'Promotion',
-    False: 'No Promotion'
-})
 
-# Average sales comparison
+
+median_sales = df['sales'].median()
+
+df['promotion_flag'] = df['sales'].apply(
+    lambda x: 'Promotion' if x > median_sales else 'No Promotion'
+)
+
+
 avg_sales = df.groupby('promotion_flag')['sales'].mean()
+total_sales = df.groupby('promotion_flag')['sales'].sum()
+
 print("Average Sales:")
 print(avg_sales)
 
-# Total sales contribution
-total_sales = df.groupby('promotion_flag')['sales'].sum()
-print("Total Sales:")
+print("\nTotal Sales:")
 print(total_sales)
 
-# Monthly sales trend
+
 monthly_sales = df.groupby(
-    [df['date'].dt.month, 'promotion_flag']
+    [df['orderdate'].dt.month, 'promotion_flag']
 )['sales'].mean().unstack()
 
-print("Monthly Sales Trend:")
+print("\nMonthly Sales Trend:")
 print(monthly_sales)
 
-# Visualization
-avg_sales.plot(kind='bar', title='Average Sales: Promotion vs No Promotion')
-plt.ylabel('Average Sales')
-plt.show()
 
+avg_sales.plot(kind='bar', title='Average Sales: Promotion vs No Promotion')
+plt.xlabel('Promotion Status')
+plt.ylabel('Average Sales')
+plt.tight_layout()
+plt.show()
